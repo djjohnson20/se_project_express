@@ -42,7 +42,7 @@ const deleteItem = (req, res) => {
   const { itemId } = req.params;
   ClothingItem.findByIdAndDelete(itemId)
     .orFail()
-    .then((item) => res.status(OK_STATUS_CODE).send({}))
+    .then(() => res.status(OK_STATUS_CODE).send({}))
     .catch((err) => {
       console.error(err);
       if (err.name === "CastError") {
@@ -71,7 +71,7 @@ const likeItem = (req, res) => {
           .status(NOT_FOUND_STATUS_CODE)
           .send({ message: "Item not found" });
       }
-      res.status(OK_STATUS_CODE).send(item);
+      return res.status(OK_STATUS_CODE).send(item);
     })
     .catch((err) => {
       console.log(err);
