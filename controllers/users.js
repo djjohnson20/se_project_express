@@ -38,7 +38,7 @@ const getUser = (req, res) => {
     .then((user) => res.status(OK_STATUS_CODE).send(user))
     .catch((err) => {
       console.error(err);
-      if (err.name === "DocumnetNotFoundError") {
+      if (err.name === "DocumentNotFoundError") {
         return res.status(NOT_FOUND_STATUS_CODE).send({ message: err.message });
       } else if (err.name === "CastError") {
         return res
