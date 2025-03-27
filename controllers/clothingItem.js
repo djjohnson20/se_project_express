@@ -13,7 +13,9 @@ const getItems = (req, res) => {
     .then((items) => res.status(OK_STATUS_CODE).send(items))
     .catch((err) => {
       console.error(err);
-      return res.status(INTERNAL_SERVER_ERROR).send({ message: err.message });
+      return res
+        .status(INTERNAL_SERVER_ERROR)
+        .send({ message: "An error has occurred on the server." });
     });
 };
 
@@ -25,16 +27,18 @@ const createItem = (req, res) => {
     imageUrl,
     owner: req.user._id,
   })
-    .then((item) => ClothingItem.findById(item._id).populate("owner"))
     .then((item) => res.status(CREATED_STATUS_CODE).send(item))
     .catch((err) => {
       console.error(err);
       if (err.name === "ValidationError") {
-        return res
-          .status(BAD_REQUEST_STATUS_CODE)
-          .send({ message: err.message });
+        return res.status(BAD_REQUEST_STATUS_CODE).send({
+          message:
+            "Invalid data provided. The clothing item must have a name, weather type, and imageUrl",
+        });
       }
-      return res.status(INTERNAL_SERVER_ERROR).send({ message: err.message });
+      return res
+        .status(INTERNAL_SERVER_ERROR)
+        .send({ message: "An error has occurred on the server" });
     });
 };
 
@@ -42,7 +46,9 @@ const deleteItem = (req, res) => {
   const { itemId } = req.params;
   ClothingItem.findByIdAndDelete(itemId)
     .orFail()
-    .then(() => res.status(OK_STATUS_CODE).send({}))
+    .then(() =>
+      res.status(OK_STATUS_CODE).send({ mesesage: "Deletion was a success" })
+    )
     .catch((err) => {
       console.error(err);
       if (err.name === "CastError") {
@@ -55,7 +61,9 @@ const deleteItem = (req, res) => {
           .status(NOT_FOUND_STATUS_CODE)
           .send({ message: "Item not found" });
       }
-      return res.status(INTERNAL_SERVER_ERROR).send({ message: err.message });
+      return res
+        .status(INTERNAL_SERVER_ERROR)
+        .send({ message: "An error has occurred on the server" });
     });
 };
 
@@ -83,9 +91,11 @@ const likeItem = (req, res) => {
       if (err.name === "ValidationError") {
         return res
           .status(BAD_REQUEST_STATUS_CODE)
-          .send({ message: err.message });
+          .send({ message: "Invalid data format for liking the item" });
       }
-      return res.status(NOT_FOUND_STATUS_CODE).send({ message: err.message });
+      return res
+        .status(NOT_FOUND_STATUS_CODE)
+        .send({ message: "Item not found" });
     });
 };
 
@@ -113,9 +123,11 @@ const dislikeItem = (req, res) => {
       if (err.name === "ValidationError") {
         return res
           .status(BAD_REQUEST_STATUS_CODE)
-          .send({ message: err.message });
+          .send({ message: "Invalid data format for disliking the item" });
       }
-      return res.status(INTERNAL_SERVER_ERROR).send({ message: err.message });
+      return res
+        .status(INTERNAL_SERVER_ERROR)
+        .send({ message: "An error has occurred on the server" });
     });
 };
 
