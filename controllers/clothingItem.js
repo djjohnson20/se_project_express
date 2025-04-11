@@ -3,6 +3,7 @@ const {
   OK_STATUS_CODE,
   CREATED_STATUS_CODE,
   BAD_REQUEST_STATUS_CODE,
+  FORBIDDEN_STATUS_CODE,
   NOT_FOUND_STATUS_CODE,
   INTERNAL_SERVER_ERROR,
 } = require("../utils/errors");
@@ -44,11 +45,18 @@ const createItem = (req, res) => {
 
 const deleteItem = (req, res) => {
   const { itemId } = req.params;
-  ClothingItem.findByIdAndDelete(itemId)
+  ClothingItem.findById(itemId)
     .orFail()
-    .then(() =>
-      res.status(OK_STATUS_CODE).send({ mesesage: "Deletion was a success" })
-    )
+    .then((item) => {
+      if (!item.owner.equals(req.user._id)) {
+        return res.status(FORBIDDEN_STATUS_CODE).send({
+          message: "Forbidden: You don't have permission to delete this item",
+        });
+      }
+      return item.deleteOne().then(() => {
+        res.status(OK_STATUS_CODE).send({ message: "Deletion was a success" });
+      });
+    })
     .catch((err) => {
       console.error(err);
       if (err.name === "CastError") {
