@@ -28,15 +28,15 @@ const createUser = (req, res) => {
   bcrypt
     .hash(password, 10)
     .then((hash) => User.create({ name, avatar, email, password: hash }))
-    .then((user) => {
-      return res.status(CREATED_STATUS_CODE).send({
+    .then((user) =>
+      res.status(CREATED_STATUS_CODE).send({
         name: user.name,
         avatar: user.avatar,
         email: user.email,
         _id: user._id,
         message: "User successfully created",
-      });
-    })
+      })
+    )
     .catch((err) => {
       console.log("Error type:", err.name);
       console.log("Error code:", err.code);
