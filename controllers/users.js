@@ -9,7 +9,6 @@ const {
   NOT_FOUND_STATUS_CODE,
   CONFLICT_STATUS_CODE,
   INTERNAL_SERVER_ERROR,
-  UNAUTHORIZED_STATUS_CODE,
 } = require("../utils/errors");
 const { JWT_SECRET } = require("../utils/config");
 
@@ -30,7 +29,7 @@ const createUser = (req, res) => {
     .hash(password, 10)
     .then((hash) => User.create({ name, avatar, email, password: hash }))
     .then((user) => {
-      res.status(CREATED_STATUS_CODE).send({
+      return res.status(CREATED_STATUS_CODE).send({
         name: user.name,
         avatar: user.avatar,
         email: user.email,
@@ -89,11 +88,11 @@ const login = (req, res) => {
       const token = jwt.sign({ _id: user._id }, JWT_SECRET, {
         expiresIn: "7d",
       });
-      res.send({ token });
+      return res.send({ token });
     })
     .catch((err) => {
       console.error(err);
-      res
+      return res
         .status(BAD_REQUEST_STATUS_CODE)
         .send({ message: "Incorrect email or password" });
     });
@@ -121,7 +120,7 @@ const updateProfile = (req, res) => {
             "Invalid data provided. Name should be 2-30 characters and avatar should be a valid URL",
         });
       }
-      res
+      return res
         .status(INTERNAL_SERVER_ERROR)
         .send({ message: "Error updating profile" });
     });
