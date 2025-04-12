@@ -94,7 +94,7 @@ const login = (req, res) => {
     .catch((err) => {
       console.error(err);
       res
-        .status(UNAUTHORIZED_STATUS_CODE)
+        .status(BAD_REQUEST_STATUS_CODE)
         .send({ message: "Incorrect email or password" });
     });
 };
