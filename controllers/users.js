@@ -9,19 +9,9 @@ const {
   NOT_FOUND_STATUS_CODE,
   CONFLICT_STATUS_CODE,
   INTERNAL_SERVER_ERROR,
+  UNAUTHORIZED_STATUS_CODE,
 } = require("../utils/errors");
 const { JWT_SECRET } = require("../utils/config");
-
-const getUsers = (req, res) => {
-  User.find({})
-    .then((users) => res.status(OK_STATUS_CODE).send(users))
-    .catch((err) => {
-      console.error(err);
-      return res
-        .status(INTERNAL_SERVER_ERROR)
-        .send({ message: "An error has occurred on the server." });
-    });
-};
 
 const createUser = (req, res) => {
   const { name, avatar, email, password } = req.body;
@@ -81,6 +71,11 @@ const getCurrentUser = (req, res) => {
 
 const login = (req, res) => {
   const { email, password } = req.body;
+  if (!email || !password) {
+    return res
+      .status(BAD_REQUEST_STATUS_CODE)
+      .send({ message: "Email and password required" });
+  }
   User.findUserByCredentials(email, password)
     .then((user) => {
       const token = jwt.sign({ _id: user._id }, JWT_SECRET, {
@@ -90,9 +85,14 @@ const login = (req, res) => {
     })
     .catch((err) => {
       console.error(err);
+      if (err.name === "Error") {
+        return res
+          .status(UNAUTHORIZED_STATUS_CODE)
+          .send({ message: "Incorrect email or password" });
+      }
       return res
-        .status(BAD_REQUEST_STATUS_CODE)
-        .send({ message: "Incorrect email or password" });
+        .status(INTERNAL_SERVER_ERROR)
+        .send({ message: "An error has occurred on the server" });
     });
 };
 
@@ -124,4 +124,4 @@ const updateProfile = (req, res) => {
     });
 };
 
-module.exports = { getUsers, createUser, getCurrentUser, login, updateProfile };
+module.exports = { createUser, getCurrentUser, login, updateProfile };

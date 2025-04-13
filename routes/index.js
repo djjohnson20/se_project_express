@@ -10,7 +10,7 @@ router.post("/signup", createUser);
 router.post("/signin", login);
 
 router.use("/users", auth, userRouter);
-router.use("/items", auth, clothingItem);
+router.use("/items", clothingItem);
 
 router.use((req, res) => {
   res
