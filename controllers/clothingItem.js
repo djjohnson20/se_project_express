@@ -10,7 +10,6 @@ const {
 
 const getItems = (req, res) => {
   ClothingItem.find({})
-    .populate("owner")
     .then((items) => res.status(OK_STATUS_CODE).send(items))
     .catch((err) => {
       console.error(err);
