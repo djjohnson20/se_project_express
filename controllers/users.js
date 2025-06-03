@@ -2,18 +2,16 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
 const User = require("../models/user");
+const { OK_STATUS_CODE, CREATED_STATUS_CODE } = require("../utils/errors");
 const {
-  OK_STATUS_CODE,
-  CREATED_STATUS_CODE,
-  BAD_REQUEST_STATUS_CODE,
-  NOT_FOUND_STATUS_CODE,
-  CONFLICT_STATUS_CODE,
-  INTERNAL_SERVER_ERROR,
-  UNAUTHORIZED_STATUS_CODE,
-} = require("../utils/errors");
+  NotFoundError,
+  UnauthorizedError,
+  ConflictError,
+  BadRequestError,
+} = require("../utils/customerrors/index");
 const { JWT_SECRET } = require("../utils/config");
 
-const createUser = (req, res) => {
+const createUser = (req, res, next) => {
   const { name, avatar, email, password } = req.body;
   bcrypt
     .hash(password, 10)
@@ -28,75 +26,59 @@ const createUser = (req, res) => {
       })
     )
     .catch((err) => {
-      console.error(err);
       if (err.name === "ValidationError") {
-        return res.status(BAD_REQUEST_STATUS_CODE).send({
-          message:
-            "Invalid data provided. The user must have a name and avatar url",
-        });
+        next(
+          new BadRequestError(
+            "Invalid data provided. The user must have a name and avatar url"
+          )
+        );
+      } else if (err.code === 11000) {
+        next(new ConflictError("Duplicate email"));
+      } else {
+        next(err);
       }
-      if (err.code === 11000) {
-        return res
-          .status(CONFLICT_STATUS_CODE)
-          .send({ message: "Duplicate email" });
-      }
-      return res
-        .status(INTERNAL_SERVER_ERROR)
-        .send({ message: "An error has occurred on the server" });
     });
 };
 
-const getCurrentUser = (req, res) => {
+const getCurrentUser = (req, res, next) => {
   const userId = req.user._id;
   User.findById(userId)
     .orFail()
     .then((user) => res.status(OK_STATUS_CODE).send(user))
     .catch((err) => {
-      console.error(err);
       if (err.name === "DocumentNotFoundError") {
-        return res
-          .status(NOT_FOUND_STATUS_CODE)
-          .send({ message: "User not found" });
+        next(new NotFoundError("User not found"));
+      } else if (err.name === "CastError") {
+        next(new BadRequestError("Invalid ID format"));
+      } else {
+        next(err);
       }
-      if (err.name === "CastError") {
-        return res
-          .status(BAD_REQUEST_STATUS_CODE)
-          .send({ message: "Invalid ID format" });
-      }
-      return res
-        .status(INTERNAL_SERVER_ERROR)
-        .send({ message: "An error has occurred on the server" });
     });
 };
 
-const login = (req, res) => {
+const login = (req, res, next) => {
   const { email, password } = req.body;
   if (!email || !password) {
-    return res
-      .status(BAD_REQUEST_STATUS_CODE)
-      .send({ message: "Email and password required" });
-  }
-  return User.findUserByCredentials(email, password)
-    .then((user) => {
-      const token = jwt.sign({ _id: user._id }, JWT_SECRET, {
-        expiresIn: "7d",
+    next(new BadRequestError("Email and password required"));
+  } else {
+    return User.findUserByCredentials(email, password)
+      .then((user) => {
+        const token = jwt.sign({ _id: user._id }, JWT_SECRET, {
+          expiresIn: "7d",
+        });
+        return res.send({ token });
+      })
+      .catch((err) => {
+        if (err.name === "Error") {
+          next(new UnauthorizedError("Incorrect email or password"));
+        } else {
+          next(err);
+        }
       });
-      return res.send({ token });
-    })
-    .catch((err) => {
-      console.error(err);
-      if (err.name === "Error") {
-        return res
-          .status(UNAUTHORIZED_STATUS_CODE)
-          .send({ message: "Incorrect email or password" });
-      }
-      return res
-        .status(INTERNAL_SERVER_ERROR)
-        .send({ message: "An error has occurred on the server" });
-    });
+  }
 };
 
-const updateProfile = (req, res) => {
+const updateProfile = (req, res, next) => {
   const { name, avatar } = req.body;
   User.findByIdAndUpdate(
     req.user._id,
@@ -106,21 +88,17 @@ const updateProfile = (req, res) => {
     .orFail()
     .then((updatedUser) => res.status(OK_STATUS_CODE).send(updatedUser))
     .catch((err) => {
-      console.error(err);
       if (err.name === "DocumentNotFoundError") {
-        return res
-          .status(NOT_FOUND_STATUS_CODE)
-          .send({ message: "User not found" });
+        next(new NotFoundError("User not found"));
+      } else if (err.name === "ValidationError") {
+        next(
+          new BadRequestError(
+            "Invalid data provided. Name should be 2-30 characters and avatar should be a valid URL"
+          )
+        );
+      } else {
+        next(err);
       }
-      if (err.name === "ValidationError") {
-        return res.status(BAD_REQUEST_STATUS_CODE).send({
-          message:
-            "Invalid data provided. Name should be 2-30 characters and avatar should be a valid URL",
-        });
-      }
-      return res
-        .status(INTERNAL_SERVER_ERROR)
-        .send({ message: "Error updating profile" });
     });
 };
 
