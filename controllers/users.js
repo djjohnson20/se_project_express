@@ -59,23 +59,22 @@ const getCurrentUser = (req, res, next) => {
 const login = (req, res, next) => {
   const { email, password } = req.body;
   if (!email || !password) {
-    next(new BadRequestError("Email and password required"));
-  } else {
-    return User.findUserByCredentials(email, password)
-      .then((user) => {
-        const token = jwt.sign({ _id: user._id }, JWT_SECRET, {
-          expiresIn: "7d",
-        });
-        return res.send({ token });
-      })
-      .catch((err) => {
-        if (err.name === "Error") {
-          next(new UnauthorizedError("Incorrect email or password"));
-        } else {
-          next(err);
-        }
-      });
+    return next(new BadRequestError("Email and password required"));
   }
+  return User.findUserByCredentials(email, password)
+    .then((user) => {
+      const token = jwt.sign({ _id: user._id }, JWT_SECRET, {
+        expiresIn: "7d",
+      });
+      return res.send({ token });
+    })
+    .catch((err) => {
+      if (err.name === "Error") {
+        next(new UnauthorizedError("Incorrect email or password"));
+      } else {
+        next(err);
+      }
+    });
 };
 
 const updateProfile = (req, res, next) => {

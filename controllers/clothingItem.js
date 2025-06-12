@@ -1,16 +1,7 @@
 const ClothingItem = require("../models/clothingItem");
-const {
-  OK_STATUS_CODE,
-  CREATED_STATUS_CODE,
-  BAD_REQUEST_STATUS_CODE,
-  FORBIDDEN_STATUS_CODE,
-  NOT_FOUND_STATUS_CODE,
-  INTERNAL_SERVER_ERROR,
-} = require("../utils/errors");
+const { OK_STATUS_CODE, CREATED_STATUS_CODE } = require("../utils/errors");
 const {
   NotFoundError,
-  UnauthorizedError,
-  ConflictError,
   BadRequestError,
   ForbiddenError,
 } = require("../utils/customerrors/index");
@@ -51,18 +42,15 @@ const deleteItem = (req, res, next) => {
     .orFail()
     .then((item) => {
       if (!item.owner.equals(req.user._id)) {
-        next(
+        return next(
           new ForbiddenError(
             "Forbidden: You don't have permission to delete this item"
           )
         );
-      } else {
-        return item.deleteOne().then(() => {
-          res
-            .status(OK_STATUS_CODE)
-            .send({ message: "Deletion was a success" });
-        });
       }
+      return item.deleteOne().then(() => {
+        res.status(OK_STATUS_CODE).send({ message: "Deletion was a success" });
+      });
     })
     .catch((err) => {
       if (err.name === "CastError") {
@@ -83,10 +71,9 @@ const likeItem = (req, res, next) => {
   )
     .then((item) => {
       if (!item) {
-        next(new NotFoundError("Item not found"));
-      } else {
-        return res.status(OK_STATUS_CODE).send(item);
+        return next(new NotFoundError("Item not found"));
       }
+      return res.status(OK_STATUS_CODE).send(item);
     })
     .catch((err) => {
       if (err.name === "CastError") {
